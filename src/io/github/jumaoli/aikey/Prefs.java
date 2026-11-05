@@ -67,7 +67,85 @@ public final class Prefs {
         } else {
             def = "flashlight";
         }
-        return sp(c).getString(key(gesture), def);
+        String v = sp(c).getString(key(gesture), null);
+        if (v != null && !v.isEmpty()) {
+            return v;
+        }
+        String sys = sysStr(c, "aikey_" + gesture);
+        if (sys != null && !sys.isEmpty() && !"null".equals(sys)) {
+            return sys;
+        }
+        return def;
+    }
+
+    /** 读 Settings.System 里的值（钩子用的同一份配置）。 */
+    private static String sysStr(Context c, String key) {
+        try {
+            return android.provider.Settings.System.getString(c.getContentResolver(), key);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** App 数据被系统清掉时，从 Settings.System 把配置认回来。只补缺失项。 */
+    public static void hydrateFromSystem(Context c) {
+        try {
+            String[] gestures = {G_SINGLE, G_DOUBLE, G_TRIPLE, G_LONG};
+            String[] keys = {K_SINGLE, K_DOUBLE, K_TRIPLE, K_LONG};
+            android.content.SharedPreferences.Editor e = sp(c).edit();
+            boolean dirty = false;
+            for (int i = 0; i < gestures.length; i++) {
+                if (sp(c).getString(keys[i], null) == null) {
+                    String v = sysStr(c, "aikey_" + gestures[i]);
+                    if (v != null && !v.isEmpty() && !"null".equals(v)) {
+                        e.putString(keys[i], v);
+                        dirty = true;
+                    }
+                }
+            }
+            if (sp(c).getInt(K_LONG_MS, -1) < 0) {
+                String v = sysStr(c, "aikey_long_ms");
+                if (v != null) {
+                    e.putInt(K_LONG_MS, (int) parseLong(v, 900));
+                    dirty = true;
+                }
+            }
+            if (sp(c).getInt(K_DOUBLE_MS, -1) < 0) {
+                String v = sysStr(c, "aikey_double_ms");
+                if (v != null) {
+                    e.putInt(K_DOUBLE_MS, (int) parseLong(v, 300));
+                    dirty = true;
+                }
+            }
+            if (sp(c).getInt(K_TRIPLE_MS, -1) < 0) {
+                String v = sysStr(c, "aikey_triple_ms");
+                if (v != null) {
+                    e.putInt(K_TRIPLE_MS, (int) parseLong(v, 400));
+                    dirty = true;
+                }
+            }
+            if (!sp(c).contains(K_HAPTIC)) {
+                String v = sysStr(c, "aikey_haptic");
+                if (v != null) {
+                    e.putBoolean(K_HAPTIC, !"0".equals(v));
+                    dirty = true;
+                }
+            }
+            if (dirty) {
+                e.apply();
+                Logs.append(c, "已从 Settings 认回配置");
+            }
+        } catch (Throwable t) {
+            Logs.append(c, "认回配置失败: " + t);
+        }
+    }
+
+    private static long parseLong(String v, long def) {
+        try {
+            return Long.parseLong(v.trim());
+        } catch (Throwable t) {
+            return def;
+        }
     }
 
     public static void setAction(Context c, String gesture, String action) {
@@ -129,11 +207,19 @@ public final class Prefs {
     }
 
     public static int tripleMs(Context c) {
-        return clamp(intVal(c, K_TRIPLE_MS, 300), 120, 1000);
+        int v = intVal(c, K_TRIPLE_MS, -1);
+        if (v < 0) {
+            v = (int) parseLong(sysStr(c, "aikey_triple_ms"), 400);
+        }
+        return clamp(v, 120, 1000);
     }
 
     public static int doubleMs(Context c) {
-        return clamp(intVal(c, K_DOUBLE_MS, 240), 100, 800);
+        int v = intVal(c, K_DOUBLE_MS, -1);
+        if (v < 0) {
+            v = (int) parseLong(sysStr(c, "aikey_double_ms"), 300);
+        }
+        return clamp(v, 100, 800);
     }
 
     public static int backDisplay(Context c) {

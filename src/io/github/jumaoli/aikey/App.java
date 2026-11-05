@@ -18,6 +18,7 @@ public class App extends Application {
                     }
                 }
             });
+            Prefs.hydrateFromSystem(this);
             Engine.get(this).ensureInstalled();
         } catch (Throwable t) {
             Logs.append(this, "初始化失败: " + t);
