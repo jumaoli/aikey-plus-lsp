@@ -408,10 +408,11 @@ public final class KeyHook {
                     XposedBridge.log("AIKey: 原生 " + fn + " 失败，回退给 App");
                 }
                 final String g2 = gesture;
+                final String a2 = action;
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        Bridge.dispatch(ctx, g2);
+                        Bridge.dispatch(ctx, g2, a2);
                     }
                 }, "aikey-dispatch").start();
             }
