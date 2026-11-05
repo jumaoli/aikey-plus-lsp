@@ -21,8 +21,7 @@ public final class Engine {
 
     public static final class Status {
         public int root;          // 0 未知 / 1 已授权 / -1 未授权
-        public boolean daemon;
-        public boolean hookThisBoot;
+            public boolean hookThisBoot;
         public String hookInfo = "";
         public String mode = Prefs.MODE_HOOK;
     }
@@ -32,7 +31,6 @@ public final class Engine {
     private final Context app;
     private final ExecutorService bg = Executors.newSingleThreadExecutor();
     private volatile boolean installed;
-    private volatile boolean daemonState;
 
     private Engine(Context c) {
         this.app = c.getApplicationContext() != null ? c.getApplicationContext() : c;
@@ -86,7 +84,7 @@ public final class Engine {
         try {
             AssetManager am = app.getAssets();
             // 放在 assets 根目录：aapt2 在 Windows 上会给嵌套 assets 写出反斜杠路径
-            String[] names = {"aikey_lib.sh", "dispatch.sh", "aikey_daemon.sh"};
+            String[] names = {"dispatch.sh"};
             for (String n : names) {
                 copyAsset(am, n, new File(d, n));
             }
@@ -284,148 +282,6 @@ public final class Engine {
         return " | " + s;
     }
 
-    // ---------------- 守护进程模式 ----------------
-
-    public boolean startDaemonSync() {
-        ensureInstalled();
-        writeConfig();
-        if (!Shell.hasRoot()) {
-            Logs.append(app, "没有 root，守护进程起不来");
-            return false;
-        }
-        stopDaemonSync();
-        final String base = "/data/local/tmp/aikey";
-        StringBuilder sb = new StringBuilder("mkdir -p " + base + "/state; ");
-        sb.append(pushAsset("aikey_lib.sh", base + "/aikey_lib.sh"));
-        sb.append(pushAsset("aikey_daemon.sh", base + "/aikey_daemon.sh"));
-        sb.append(pushAsset("dispatch.sh", base + "/dispatch.sh"));
-        sb.append(pushText(Prefs.configText(app), base + "/config.conf"));
-        sb.append(pushText(readCommands(), base + "/commands.conf"));
-        sb.append("chmod 755 " + base + "/*.sh; ");
-        Shell.Result push = Shell.run(sb.toString(), 30000);
-        if (!push.ok) {
-            Logs.append(app, "推送脚本失败: " + push.out.trim());
-            return false;
-        }
-        Shell.run("p=$(cat " + base + "/daemon.pid 2>/dev/null); [ -n \"$p\" ] && kill -9 $p 2>/dev/null; "
-                + "rm -f " + base + "/daemon.pid; rm -rf " + base + "/daemon.lock; true", 8000);
-        Shell.run("cd " + base + " && setsid sh ./aikey_daemon.sh >/dev/null 2>&1 &", 10000);
-        try {
-            Thread.sleep(700);
-        } catch (Throwable ignored) {
-        }
-        daemonState = daemonAliveSync();
-        Logs.append(app, "守护进程(base=" + base + ") -> " + (daemonState ? "已运行" : "未起来"));
-        return daemonState;
-    }
-
-    /** 把 assets 里的脚本推到 /data/local/tmp（App 私有目录 root 读不了）。 */
-    private String pushAsset(String asset, String dest) {
-        try {
-            java.io.InputStream in = app.getAssets().open(asset);
-            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) > 0) {
-                bos.write(buf, 0, n);
-            }
-            in.close();
-            return pushText(new String(bos.toByteArray(), "UTF-8"), dest);
-        } catch (Throwable t) {
-            Logs.append(app, "读取 " + asset + " 失败: " + t);
-            return "";
-        }
-    }
-
-    /** base64 传内容，避免引号/换行问题。 */
-    private String pushText(String content, String dest) {
-        try {
-            String b64 = android.util.Base64.encodeToString(
-                    content.getBytes("UTF-8"), android.util.Base64.NO_WRAP);
-            return "echo " + b64 + " | base64 -d > " + dest + "; ";
-        } catch (Throwable t) {
-            return "";
-        }
-    }
-
-    private String readCommands() {
-        try {
-            File f = new File(dir(app), "commands.conf");
-            if (!f.exists()) {
-                return "";
-            }
-            byte[] b = new byte[(int) f.length()];
-            java.io.FileInputStream in = new java.io.FileInputStream(f);
-            int off = 0;
-            while (off < b.length) {
-                int n = in.read(b, off, b.length - off);
-                if (n <= 0) {
-                    break;
-                }
-                off += n;
-            }
-            in.close();
-            return new String(b, "UTF-8");
-        } catch (Throwable t) {
-            return "";
-        }
-    }
-
-    /** 把 assets 里的脚本推到 shell 可读目录。 */
-    private String pushFile(String asset, String dest) {
-        try {
-            java.io.InputStream in = app.getAssets().open(asset);
-            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) > 0) {
-                bos.write(buf, 0, n);
-            }
-            in.close();
-            return pushText(asset, new String(bos.toByteArray(), "UTF-8"), dest);
-        } catch (Throwable t) {
-            Logs.append(app, "读取 asset 失败 " + asset + ": " + t);
-            return "";
-        }
-    }
-
-    /** 用 base64 传内容，避开引号 / 换行问题。 */
-    private String pushText(String name, String content, String dest) {
-        try {
-            String b64 = android.util.Base64.encodeToString(
-                    content.getBytes("UTF-8"), android.util.Base64.NO_WRAP);
-            return "echo " + b64 + " | base64 -d > " + dest + "; ";
-        } catch (Throwable t) {
-            return "";
-        }
-    }
-
-    private void shiz(String unused) {
-    }
-
-    public void stopDaemonSync() {
-        if (Shell.rootState != 1 && !Shell.hasRoot()) {
-            return;
-        }
-        final String base = "/data/local/tmp/aikey";
-        Shell.run("p=$(cat " + base + "/daemon.pid 2>/dev/null); [ -n \"$p\" ] && kill -9 $p 2>/dev/null; "
-                + "rm -f " + base + "/daemon.pid; rm -rf " + base + "/daemon.lock; "
-                + "pkill -9 -f aikey_daemon.sh 2>/dev/null; true", 8000);
-        daemonState = false;
-    }
-
-    public boolean daemonAliveSync() {
-        if (!Shell.hasRoot()) {
-            return false;
-        }
-        final String base = "/data/local/tmp/aikey";
-        String cmd = "if [ -f " + base + "/daemon.pid ]; then p=$(cat " + base
-                + "/daemon.pid); kill -0 $p 2>/dev/null && echo 1 || echo 0; else echo 0; fi";
-        Shell.Result r = Shell.run(cmd, 8000);
-        daemonState = r.ok && r.out.trim().endsWith("1");
-        return daemonState;
-    }
-
     // ---------------- 系统设置 ----------------
 
     /** com.miui.securitycore 里的原生「AI 键」设置页（exported=true，可以直接拉起来）。 */
@@ -551,7 +407,7 @@ public final class Engine {
         return r.ok && !r.out.contains("Error");
     }
 
-    /** 一次性把配置写盘、关掉系统 AI 键、按模式启停守护进程。 */
+    /** 一次性把配置写盘、关掉系统 AI 键。 */
     public String applyAllSync() {
         ensureInstalled();
         writeConfig();
@@ -559,11 +415,6 @@ public final class Engine {
             return "未获得 root 权限：动作无法执行，请在 KernelSU / Magisk 里给本应用授权。";
         }
         applySystemKeysSync();
-        if (Prefs.MODE_DAEMON.equals(Prefs.mode(app))) {
-            boolean ok = startDaemonSync();
-            return ok ? "已保存：守护进程模式运行中" : "已保存，但守护进程没有起来（看日志）";
-        }
-        stopDaemonSync();
         return "已保存：LSPosed 钩子模式";
     }
 
@@ -579,9 +430,6 @@ public final class Engine {
         s.hookThisBoot = Prefs.bootCount(app) >= 0
                 && Prefs.intVal(app, Prefs.K_HOOK_BOOT, -2) == Prefs.bootCount(app);
         s.hookInfo = Prefs.strVal(app, Prefs.K_HOOK_INFO, "");
-        if (Shell.hasRoot()) {
-            s.daemon = daemonAliveSync();
-        }
         return s;
     }
 

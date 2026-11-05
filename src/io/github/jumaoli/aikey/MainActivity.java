@@ -54,7 +54,6 @@ public class MainActivity extends Activity {
     private TextView heroSub;
     private android.widget.ImageView heroIcon;
     private LinearLayout heroCardView;
-    private TextView daemonValue;
     private TextView hint;
 
     @Override
@@ -473,16 +472,6 @@ public class MainActivity extends Activity {
                 rootValue = chip("检测中", SUB));
         card.addView(r2);
 
-        card.addView(divider());
-        modeValue = text("", 13, SUB, false);
-        LinearLayout r3 = statusRow(iconFor("运行模式"), "运行模式", modeValue);
-        card.addView(r3);
-
-        card.addView(divider());
-        LinearLayout r4 = statusRow(iconFor("守护进程"), "守护进程",
-                daemonValue = chip("未知", SUB));
-        card.addView(r4);
-
         hint = text("", 12, SUB, false);
         hint.setPadding(dp(16), dp(10), dp(16), dp(14));
         card.addView(hint);
@@ -593,13 +582,6 @@ public class MainActivity extends Activity {
             }
         }));
         card.addView(divider());
-        card.addView(row("运行模式", modeLabel(), new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pickMode();
-            }
-        }));
-        card.addView(divider());
         card.addView(switchRow("独占 AI 键", "吞掉按键事件，系统/应用都收不到", Prefs.K_CONSUME, true,
                 new SwitchListener() {
                     @Override
@@ -625,8 +607,6 @@ public class MainActivity extends Activity {
                         }
                     }
                 }));
-        card.addView(divider());
-        card.addView(switchRow("开机自启", "重启后自动拉起（守护进程模式）", Prefs.K_AUTO_START, true, null));
         return card;
     }
 
@@ -660,19 +640,6 @@ public class MainActivity extends Activity {
                     }
                 })));
         card.addView(buttonRow(
-                button("启动守护", false, new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        daemon(true);
-                    }
-                }),
-                button("停止守护", false, new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        daemon(false);
-                    }
-                })));
-        card.addView(buttonRow(
                 button("恢复默认", false, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -694,13 +661,13 @@ public class MainActivity extends Activity {
         TextView t = text(
                 "两种模式：\n"
                         + "· LSPosed 钩子：钩子在 system_server 里拦 AI 键，不需要常驻 getevent，亮屏灭屏都能用。\n"
-                        + "· 守护进程：直接读 /dev/input 的 gpio-keys（和原 KernelSU 模块一样）。钩子没生效时用这个。\n\n"
+                        + ""
                         + "动作由 root shell 执行：手电筒写 LED 节点、截图注入「音量下+电源」、录屏调系统录屏的 AppFunction。"
                         + "所以首次使用请给本应用 root 权限。\n\n"
                         + "按键没反应？\n"
                         + "1. 打开「按键探测」，按一下 AI 键，看日志里的 keyCode 是否等于上面配置的值；\n"
                         + "2. LSPosed 里确认本模块已启用、作用域已勾选「系统框架」，并且重启过手机；\n"
-                        + "3. 还不行就切到「守护进程」模式。\n\n"
+                        + "3. 还不行就看日志里的 hooks= 数量。\n\n"
                         + "原创：KernelSU 模块 aikey_plus v1.1.1（NekoWannn）；本 APK 是它的 LSPosed 移植版。",
                 12, SUB, false);
         t.setLineSpacing(dp(3), 1f);
@@ -747,18 +714,12 @@ public class MainActivity extends Activity {
                 setChip(rootValue, "检测中", SUB);
             }
         }
-        if (modeValue != null) {
-            modeValue.setText(modeLabel());
-        }
-        boolean hookOk = s.hookThisBoot;
-        boolean daemonOk = s.daemon;
-        boolean working = s.root == 1
-                && (Prefs.MODE_DAEMON.equals(s.mode) ? daemonOk : hookOk);
+        boolean working = s.root == 1 && s.hookThisBoot;
         if (heroTitle != null) {
             heroTitle.setText(working ? "工作中" : "未就绪");
         }
         if (heroSub != null) {
-            heroSub.setText("版本 v" + BuildConfig.VERSION_NAME + " · " + modeLabel()
+            heroSub.setText("版本 v" + BuildConfig.VERSION_NAME + " · LSPosed 钩子"
                     + (working ? " · 已生效" : " · 未生效"));
         }
         if (heroIcon != null) {
@@ -771,27 +732,19 @@ public class MainActivity extends Activity {
             hg.setCornerRadius(dp(24));
             heroCardView.setBackground(hg);
         }
-        if (daemonValue != null) {
-            setChip(daemonValue, s.daemon ? "运行中" : "未运行", s.daemon ? OK : SUB);
-        }
         if (hint != null) {
             String h;
             if (s.root != 1) {
                 h = "尚未获得 root：动作执行不了。请在 KernelSU / Magisk 里允许本应用使用 root。";
                 hint.setTextColor(ERR);
-            } else if (Prefs.MODE_HOOK.equals(s.mode) && !s.hookThisBoot) {
-                h = "当前是钩子模式，但本次开机没收到钩子心跳：请在 LSPosed 里启用模块、勾选「系统框架」并重启；"
-                        + "或者改用守护进程模式。";
+            } else if (!s.hookThisBoot) {
+                h = "本次开机没收到钩子心跳：请在 LSPosed 里启用模块、勾选「系统框架」并重启。";
                 hint.setTextColor(WARN);
-            } else if (Prefs.MODE_HOOK.equals(s.mode) && s.hookInfo != null
-                    && s.hookInfo.startsWith("hooks=0")) {
-                h = "钩子已注入，但这台机器的 PhoneWindowManager 里没找到按键方法：请切到守护进程模式。";
+            } else if (s.hookInfo != null && s.hookInfo.startsWith("hooks=0")) {
+                h = "钩子已注入，但这台机器的 PhoneWindowManager 里没找到按键方法。";
                 hint.setTextColor(WARN);
-            } else if (Prefs.MODE_HOOK.equals(s.mode)) {
-                h = "钩子已就绪（" + s.hookInfo + "）。按一下 AI 键试试。";
-                hint.setTextColor(SUB);
             } else {
-                h = "守护进程模式：直接读内核按键，和原模块一致。";
+                h = "钩子已就绪（" + s.hookInfo + "）。按一下 AI 键试试。";
                 hint.setTextColor(SUB);
             }
             hint.setText(h);
@@ -799,16 +752,6 @@ public class MainActivity extends Activity {
     }
 
     private String modeLabel() {
-        String m = Prefs.mode(this);
-        if (Prefs.MODE_DAEMON.equals(m)) {
-            return "守护进程";
-        }
-        if ("shizuku".equals(m)) {
-            return "Shizuku";
-        }
-        if ("stellar".equals(m)) {
-            return "Stellar";
-        }
         return "LSPosed 钩子";
     }
 
@@ -997,26 +940,6 @@ public class MainActivity extends Activity {
         b.show();
     }
 
-    private void pickMode() {
-        final String[] items = {
-                "LSPosed 钩子（推荐）",
-                "守护进程（读 /dev/input）",
-                "守护进程（推荐）"
-        };
-        new AlertDialog.Builder(this)
-                .setTitle("运行模式")
-                .setItems(items, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Prefs.setMode(MainActivity.this,
-                                which == 0 ? Prefs.MODE_HOOK
-                        : Prefs.MODE_DAEMON);
-                        applyAll();
-                    }
-                })
-                .show();
-    }
-
     private void setGesture(String gesture, String action) {
         Prefs.setAction(this, gesture, action);
         Engine.get(this).writeConfig();
@@ -1140,7 +1063,7 @@ public class MainActivity extends Activity {
                         .append(" / Android ").append(Build.VERSION.RELEASE)
                         .append(" (SDK ").append(Build.VERSION.SDK_INT).append(")\n");
                 sb.append("模式: ").append(s.mode).append("  钩子本次开机: ").append(s.hookThisBoot)
-                        .append("  root: ").append(s.root).append("  守护: ").append(s.daemon)
+                        .append("  root: ").append(s.root)
                         .append("\n钩子信息: ").append(s.hookInfo).append('\n');
                 sb.append("键码: ").append(Prefs.keyCodes(c)).append('\n');
                 sb.append("单击=").append(Prefs.action(c, Prefs.G_SINGLE))
@@ -1390,29 +1313,6 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void daemon(final boolean start) {        final Context c = this;
-        toast(start ? "正在启动守护进程…" : "正在停止…");
-        Engine.get(this).bg().execute(new Runnable() {
-            @Override
-            public void run() {
-                final boolean ok;
-                if (start) {
-                    ok = Engine.get(c).startDaemonSync();
-                } else {
-                    Engine.get(c).stopDaemonSync();
-                    ok = true;
-                }
-                ui.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        toast(start ? (ok ? "守护进程已启动" : "启动失败，看日志") : "已停止");
-                        refreshStatus();
-                    }
-                });
-            }
-        });
-    }
-
     private void startKeepAlive() {
         try {
             if (Build.VERSION.SDK_INT >= 26) {
@@ -1527,8 +1427,6 @@ public class MainActivity extends Activity {
         if (title.contains("长按")) return R.drawable.ic_long;
         if (title.contains("钩子") || title.contains("LSPosed")) return R.drawable.ic_shield;
         if (title.contains("Root")) return R.drawable.ic_root;
-        if (title.contains("运行模式")) return R.drawable.ic_mode;
-        if (title.contains("守护")) return R.drawable.ic_daemon;
         if (title.contains("手电筒")) return R.drawable.ic_torch;
         if (title.contains("小部件")) return R.drawable.ic_widget;
         if (title.contains("截图") || title.contains("背屏")) return R.drawable.ic_rear;
@@ -1538,7 +1436,6 @@ public class MainActivity extends Activity {
         if (title.contains("探测")) return R.drawable.ic_probe;
         if (title.contains("震动")) return R.drawable.ic_vibrate;
         if (title.contains("常驻")) return R.drawable.ic_keep;
-        if (title.contains("自启")) return R.drawable.ic_boot;
         if (title.contains("心跳")) return R.drawable.ic_shield;
         return 0;
     }

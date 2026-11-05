@@ -27,15 +27,6 @@ public class BootReceiver extends BroadcastReceiver {
                     Logs.append(c, "开机启动前台服务失败: " + t);
                 }
             }
-            if (Prefs.boolVal(c, Prefs.K_AUTO_START, true)
-                    && Prefs.MODE_DAEMON.equals(Prefs.mode(c))) {
-                e.bg().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        Engine.get(c).startDaemonSync();
-                    }
-                });
-            }
         } catch (Throwable t) {
             Logs.append(context, "开机处理失败: " + t);
         }

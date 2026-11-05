@@ -24,8 +24,8 @@ $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
 $Stage = Join-Path $env:TEMP 'aikey-lsp-build'
 $Keystore = Join-Path $env:USERPROFILE '.aikey-lsp\aikey-debug.jks'
-$Version = '8.0.0'
-$VersionCode = 70
+$Version = '8.1.0'
+$VersionCode = 71
 $ApkName = "aikey-plus-lsp-v$Version.apk"
 
 function Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
@@ -125,7 +125,7 @@ if (-not $SkipTests) {
     $testOut = Join-Path $BuildDir 'test-classes'
     New-Item -ItemType Directory -Force -Path $testOut | Out-Null
     Run 'javac' @('-encoding', 'UTF-8', '-d', $testOut,
-        (Join-Path $Src 'com\aikeyplus\lsp\hook\GestureEngine.java'),
+        (Join-Path $Src 'io\github\jumaoli\aikey\hook\GestureEngine.java'),
         (Join-Path $TestDir 'GestureEngineTest.java')) '编译测试'
     Run 'java' @('-Dfile.encoding=UTF-8', '-cp', $testOut,
         'io.github.jumaoli.aikey.hook.GestureEngineTest') '运行测试' |
@@ -136,7 +136,7 @@ if (-not $SkipTests) {
     New-Item -ItemType Directory -Force -Path $actOut | Out-Null
     Run 'javac' @('-encoding', 'UTF-8', '-source', '8', '-target', '8',
         '-bootclasspath', $AndroidJar, '-classpath', $AndroidJar, '-d', $actOut,
-        (Join-Path $Src 'com\aikeyplus\lsp\ActionCatalog.java'),
+        (Join-Path $Src 'io\github\jumaoli\aikey\ActionCatalog.java'),
         (Join-Path $TestDir 'ActionCatalogTest.java')) '编译动作表测试'
     Run 'java' @('-Dfile.encoding=UTF-8', '-cp', "$actOut;$AndroidJar",
         'io.github.jumaoli.aikey.ActionCatalogTest') '运行动作表测试' |
@@ -254,8 +254,7 @@ Step '校验 APK 内容'
 $badging = Run $Aapt2 @('dump', 'badging', $apk) 'aapt2 dump'
 $badging | Select-Object -First 6 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
-$need = @('classes.dex', 'assets/xposed_init', 'assets/aikey_lib.sh',
-    'assets/dispatch.sh', 'assets/aikey_daemon.sh')
+$need = @('classes.dex', 'assets/xposed_init', 'assets/dispatch.sh')
 $zip = [System.IO.Compression.ZipFile]::OpenRead($apk)
 try {
     $names = $zip.Entries | ForEach-Object { $_.FullName }

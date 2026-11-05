@@ -195,15 +195,6 @@ Window #24 Window{... u0 AIKeyWidget}
 所以本模块保留 **root 必需** 的定位。App 里加了「Shizuku / Stellar」状态行，
 显示运行/授权状态并可发起授权，将来若要用它们的普通命令通道（settings / am）可以直接接。
 
-## 五¼、运行方式：Shizuku / Stellar 也能跑守护进程
-
-v1.8.0 起，「运行模式」里有四个选项：LSPosed 钩子 / 守护进程 / Shizuku / Stellar。
-
-- 选 Shizuku 或 Stellar 时，守护进程通过 **Shizuku 用户服务**（`Shizuku.bindUserService`）跑在 shell 进程里；
-- 实测 shell 身份**可以读** `/dev/input/event5`（`getevent` 能打开，只是等不到事件），所以按键捕获不依赖钩子；
-- shell 身份**不能写**输入设备（`sendevent` 被 SELinux 拒），所以「手电筒 sendevent 兜底」「按键注入」这类动作在无 root 时不可用，`am start` / `settings` / 截图这类正常。
-
-首次切换会触发 Shizuku/Stellar 的授权弹窗，允许后即可。
 
 ## 五¾、内置乐乐背屏
 
@@ -275,12 +266,12 @@ am start -a android.intent.action.VIEW -n com.tencent.mm/com.tencent.mm.plugin.o
 | 手电筒亮度 | 150 | 1–255 |
 | AI 键键码 | 690 | 可多个；不确定就开「按键探测」 |
 | 背屏 display id | 1 | OS4 实测就是 1 |
-| 运行模式 | LSPosed 钩子 | / 守护进程 |
+| 运行模式 | LSPosed 钩子 | 仅此一种 |
 | 独占 AI 键 | 开 | 吞掉系统事件 |
 | 按键探测 | 关 | 把按键码写日志 |
 | 震动反馈 | 开 | 单击一下 / 双击两下 / 长按一下长的（在 system_server 里用 Vibrator，无额外权限） |
 | 常驻后台 | 开 | 前台服务保活 |
-| 开机自启 | 开 | 守护进程模式下自动拉起 |
+| 开机自启 | 开 | 开机后自动拉起常驻服务 |
 
 ---
 
@@ -289,10 +280,10 @@ am start -a android.intent.action.VIEW -n com.tencent.mm/com.tencent.mm.plugin.o
 | 现象 | 处理 |
 | --- | --- |
 | App 里「钩子未注入」 | 确认 root 在、LSPosed 里模块启用且作用域勾了「系统框架」、重启过 |
-| 钩子日志里没有按键 | 看 LSPosed 日志 `/data/adb/lspd/log/modules_*.log` 里有没有 `AIKey: key code=690`；没有就是键没到 policy 层 → 用守护进程模式 |
+| 钩子日志里没有按键 | 看 LSPosed 日志 `/data/adb/lspd/log/modules_*.log` 里有没有 `AIKey: key code=690`；没有就是键没到 policy 层 |
 | 原生动作没反应 | 日志会打 `AIKey: 系统拒绝执行 xxx` 或 `ShortCutActionsUtils 不可用`；个别 function 在该机型上可能被裁掉 |
 | 背屏没反应 | 改 display id（试 1/2/3）；目标 Activity 不支持副屏时只能用原生条目 |
-| 一次按键两个动作 | 钩子模式和守护进程同时开，点「立即应用」会停掉守护 |
+| 一次按键两个动作 | 装了旧版 `com.aikeyplus.lsp`，先卸载旧版 |
 
 LSPosed 日志里能直接看到：`AIKey: 挂钩成功…`、`AIKey: key code=690 down/up`、`AIKey: 手势 single -> 原生 xxx ok`。
 
@@ -342,7 +333,7 @@ LSPosed 日志里能直接看到：`AIKey: 挂钩成功…`、`AIKey: key code=6
 
 ## 十三、卸载
 
-1. App 里「还原系统 AI 键」→「停止守护」。
+1. App 里点「还原系统 AI 键」。
 2. LSPosed 停用模块 → 卸载 APK → 重启。
 
 ---
