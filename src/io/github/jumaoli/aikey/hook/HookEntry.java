@@ -55,6 +55,10 @@ public class HookEntry implements IXposedHookLoadPackage {
                 installSubScreen(0);
                 return;
             }
+            if ("com.miui.securitycore".equals(lpparam.packageName)) {
+                SettingsPageHook.install(lpparam.classLoader);
+                return;
+            }
             if (!"android".equals(lpparam.packageName)) {
                 return;
             }

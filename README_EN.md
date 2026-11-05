@@ -18,6 +18,11 @@ scanners, peep protection, mute, screenshots, rear-screen capture, camera, Xiao 
 | Runtime | LSPosed (scope: **System Framework**) |
 | Tested on | Xiaomi 18 Pro, HyperOS OS4.0.27, Android 17 |
 
+## Take over the system AI key settings page
+
+When enabled, tapping *Settings → AI key* opens this app's action picker (all 80+ actions) instead of MIUI's 9 built-in options.
+Requires `com.miui.securitycore` in the LSPosed scope.
+
 ## Features
 
 - **Four gestures**: single click / double click / triple click / long press — every threshold is configurable
@@ -31,7 +36,7 @@ scanners, peep protection, mute, screenshots, rear-screen capture, camera, Xiao 
 ## Install
 
 1. Install the APK (from [Releases](https://github.com/jumaoli/aikey-plus-lsp/releases))
-2. Enable the module in LSPosed, check the **System Framework** scope
+2. Enable the module in LSPosed, check the **System Framework** scope (add **com.miui.securitycore** if you want to take over the system AI-key settings page)
 3. Reboot
 4. Open the app, tap **立即应用 (Apply)** and grant root when asked
 5. Pick an action for each gesture

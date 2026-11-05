@@ -164,7 +164,9 @@ public final class Engine {
             cmd.append("settings put system aikey_haptic ")
                     .append(Prefs.boolVal(app, Prefs.K_HAPTIC, true) ? 1 : 0).append("; ");
             cmd.append("settings put system aikey_codes ").append(q(Prefs.keyCodes(app))).append("; ");
-            cmd.append("settings put system aikey_mode ").append(q(Prefs.mode(app))).append("; true");
+            cmd.append("settings put system aikey_mode ").append(q(Prefs.mode(app))).append("; ");
+            cmd.append("settings put system aikey_takeover_page ")
+                    .append(Prefs.boolVal(app, Prefs.K_TAKEOVER, true) ? 1 : 0).append("; true");
             Shell.run(cmd.toString(), 12000);
         } catch (Throwable t) {
             Logs.append(app, "写钩子配置失败: " + t);

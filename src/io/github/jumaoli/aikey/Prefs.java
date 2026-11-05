@@ -34,6 +34,7 @@ public final class Prefs {
     public static final String K_HOOK_INFO = "hook_info";
     public static final String K_DISPLAY = "back_display";
     public static final String K_HAPTIC = "haptic";
+    public static final String K_TAKEOVER = "takeover_page";
     public static final String K_WIDGET = "widget_id";
     public static final String K_WIDGET_PROVIDER = "widget_provider";
     public static final String K_EVENT = "event_device";

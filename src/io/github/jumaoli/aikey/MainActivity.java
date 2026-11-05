@@ -583,6 +583,14 @@ public class MainActivity extends Activity {
             }
         }));
         card.addView(divider());
+        card.addView(switchRow("接管系统 AI 键设置页", "设置 → AI 键 直接打开本页面（需把 com.miui.securitycore 加进作用域）",
+                Prefs.K_TAKEOVER, true, new SwitchListener() {
+                    @Override
+                    public void onChanged(boolean checked) {
+                        Engine.get(MainActivity.this).writeConfig();
+                    }
+                }));
+        card.addView(divider());
         card.addView(switchRow("独占 AI 键", "吞掉按键事件，系统/应用都收不到", Prefs.K_CONSUME, true,
                 new SwitchListener() {
                     @Override
