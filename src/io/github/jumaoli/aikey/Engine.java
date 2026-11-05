@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp;
+package io.github.jumaoli.aikey;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -238,7 +238,7 @@ public final class Engine {
                 Shell.run("appwidget grantbind --package com.xiaomi.subscreencenter --user 0", 8000);
             }
             try {
-                android.content.Intent b = new android.content.Intent("com.aikeyplus.lsp.SHOW_WIDGET");
+                android.content.Intent b = new android.content.Intent("io.github.jumaoli.aikey.SHOW_WIDGET");
                 b.setPackage("com.xiaomi.subscreencenter");
                 b.putExtra("provider", provider);
                 app.sendBroadcast(b);
@@ -251,7 +251,7 @@ public final class Engine {
         }        if ("widget_off".equals(action)) {
             WidgetBoard.hide(app);
             try {
-                android.content.Intent b = new android.content.Intent("com.aikeyplus.lsp.HIDE_WIDGET");
+                android.content.Intent b = new android.content.Intent("io.github.jumaoli.aikey.HIDE_WIDGET");
                 b.setPackage("com.xiaomi.subscreencenter");
                 app.sendBroadcast(b);
             } catch (Throwable ignored) {

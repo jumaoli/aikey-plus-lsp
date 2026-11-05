@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp;
+package io.github.jumaoli.aikey;
 
 import android.app.Activity;
 import android.app.AlertDialog;

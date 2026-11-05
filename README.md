@@ -123,7 +123,7 @@ Window #24 Window{... u0 AIKeyWidget}
 | 动作 | 11 个 | 62 个，含 MIUI 原生动作与正/背屏 |
 | 系统动作 | 无 | 直接调 `ShortCutActionsUtils`，不需要改设置、不需要注入 |
 
-包名仍是 `com.aikeyplus.lsp`，覆盖安装不丢 LSPosed 启用状态。
+包名仍是 `io.github.jumaoli.aikey`，覆盖安装不丢 LSPosed 启用状态。
 
 ---
 

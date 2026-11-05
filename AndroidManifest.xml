@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.aikeyplus.lsp"
-    android:versionCode="69"
-    android:versionName="7.0.2">
+    package="io.github.jumaoli.aikey"
+    android:versionCode="70"
+    android:versionName="8.0.0">
 
     <uses-sdk
         android:minSdkVersion="30"
@@ -61,7 +61,7 @@
         <!-- system_server 里的钩子通过它读配置 / 派发手势 -->
         <provider
             android:name=".AiKeyProvider"
-            android:authorities="com.aikeyplus.lsp.config"
+            android:authorities="io.github.jumaoli.aikey.config"
             android:exported="true" />
 
         <service

@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp.hook;
+package io.github.jumaoli.aikey.hook;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XposedBridge;

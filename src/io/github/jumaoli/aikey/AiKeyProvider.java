@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp;
+package io.github.jumaoli.aikey;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -19,7 +19,7 @@ import android.os.Process;
  */
 public class AiKeyProvider extends ContentProvider {
 
-    public static final String AUTHORITY = "com.aikeyplus.lsp.config";
+    public static final String AUTHORITY = "io.github.jumaoli.aikey.config";
     public static final Uri URI = Uri.parse("content://" + AUTHORITY);
 
     @Override

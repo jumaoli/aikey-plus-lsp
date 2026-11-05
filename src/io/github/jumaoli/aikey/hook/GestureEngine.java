@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp.hook;
+package io.github.jumaoli.aikey.hook;
 
 /**
  * 单击 / 双击 / 三击 / 长按 状态机（纯 Java，不依赖 Android，方便在电脑上跑单元测试）。

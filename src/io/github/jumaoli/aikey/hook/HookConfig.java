@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp.hook;
+package io.github.jumaoli.aikey.hook;
 
 import android.os.Bundle;
 

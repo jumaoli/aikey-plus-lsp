@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp;
+package io.github.jumaoli.aikey;
 
 import android.app.Activity;
 import android.appwidget.AppWidgetHost;
@@ -21,7 +21,7 @@ import android.widget.TextView;
  * 挂不上去，但普通 Activity 可以（相机等应用就是用 am start --display 1 过去的）。
  *
  * 启动方式：
- *   am start --display 1 -n com.aikeyplus.lsp/.WidgetActivity --ei widget_id 794
+ *   am start --display 1 -n io.github.jumaoli.aikey/.WidgetActivity --ei widget_id 794
  * App 内用 ActivityOptions.setLaunchDisplayId 直接拉起，不依赖 root。
  */
 public class WidgetActivity extends Activity {

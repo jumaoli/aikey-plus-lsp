@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp;
+package io.github.jumaoli.aikey;
 
 import android.app.Presentation;
 import android.appwidget.AppWidgetHost;
@@ -20,7 +20,7 @@ import android.widget.FrameLayout;
  * 做法：在背屏（display 1）上开一个 Presentation，里面放 AppWidgetHostView。
  * 这是 Android 官方支持的用法，不需要 hook 背屏 App，也不需要改系统。
  * 绑定小部件需要 BIND_APPWIDGET 权限：root 下用
- *   appwidget grantbind --package com.aikeyplus.lsp --user 0
+ *   appwidget grantbind --package io.github.jumaoli.aikey --user 0
  * 授权，或者走系统的授权弹窗（ACTION_APPWIDGET_BIND）。
  */
 public final class WidgetBoard {

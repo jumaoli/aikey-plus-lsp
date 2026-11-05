@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp;
+package io.github.jumaoli.aikey;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

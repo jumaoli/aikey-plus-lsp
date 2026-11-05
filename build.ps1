@@ -24,8 +24,8 @@ $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
 $Stage = Join-Path $env:TEMP 'aikey-lsp-build'
 $Keystore = Join-Path $env:USERPROFILE '.aikey-lsp\aikey-debug.jks'
-$Version = '7.0.2'
-$VersionCode = 69
+$Version = '8.0.0'
+$VersionCode = 70
 $ApkName = "aikey-plus-lsp-v$Version.apk"
 
 function Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
@@ -128,7 +128,7 @@ if (-not $SkipTests) {
         (Join-Path $Src 'com\aikeyplus\lsp\hook\GestureEngine.java'),
         (Join-Path $TestDir 'GestureEngineTest.java')) '编译测试'
     Run 'java' @('-Dfile.encoding=UTF-8', '-cp', $testOut,
-        'com.aikeyplus.lsp.hook.GestureEngineTest') '运行测试' |
+        'io.github.jumaoli.aikey.hook.GestureEngineTest') '运行测试' |
         ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
     Step '编译并运行动作表自检'
@@ -139,7 +139,7 @@ if (-not $SkipTests) {
         (Join-Path $Src 'com\aikeyplus\lsp\ActionCatalog.java'),
         (Join-Path $TestDir 'ActionCatalogTest.java')) '编译动作表测试'
     Run 'java' @('-Dfile.encoding=UTF-8', '-cp', "$actOut;$AndroidJar",
-        'com.aikeyplus.lsp.ActionCatalogTest') '运行动作表测试' |
+        'io.github.jumaoli.aikey.ActionCatalogTest') '运行动作表测试' |
         ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
     Ok '测试通过'
 }

@@ -1,10 +1,10 @@
-package com.aikeyplus.lsp.hook;
+package io.github.jumaoli.aikey.hook;
 
 /**
  * GestureEngine 的回归测试（纯 JVM，不依赖 Android）。
  * 编译运行：
  *   javac -d out test\GestureEngineTest.java src\com\aikeyplus\lsp\hook\GestureEngine.java
- *   java -cp out com.aikeyplus.lsp.hook.GestureEngineTest
+ *   java -cp out io.github.jumaoli.aikey.hook.GestureEngineTest
  */
 public final class GestureEngineTest {
 

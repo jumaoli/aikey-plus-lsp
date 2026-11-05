@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp.hook;
+package io.github.jumaoli.aikey.hook;
 
 import android.content.Context;
 import android.net.Uri;
@@ -12,7 +12,7 @@ import de.robv.android.xposed.XposedBridge;
  */
 final class Bridge {
 
-    static final Uri URI = Uri.parse("content://com.aikeyplus.lsp.config");
+    static final Uri URI = Uri.parse("content://io.github.jumaoli.aikey.config");
 
     private static long lastErrLog;
 

@@ -14,7 +14,7 @@
 D:\小米云盘\文档\deepseek-harness\default-workspace\aikey-lsp
 
 【现状】
-- 包名 com.aikeyplus.lsp，应用名「爽歪了AI键」，versionName 4.3.1 / versionCode 58
+- 包名 io.github.jumaoli.aikey，应用名「爽歪了AI键」，versionName 4.3.1 / versionCode 58
 - 产物 dist\aikey-plus-lsp-v4.3.1.apk（约 221 KB，无第三方依赖）
 - 两种运行方式：
   1) LSPosed 钩子（system_server 内拦截 AI 键，功能最全）
@@ -42,7 +42,7 @@ D:\小米云盘\文档\deepseek-harness\default-workspace\aikey-lsp
    实现见 Engine.writeHookConfigSync() 与 hook/Bridge.readSettings()
    ——不要改回 ContentResolver 调 provider：开机早期 provider 不可用，钩子会永远读到默认值。
 3. 钩子入口
-   xposed_init 里 com.aikeyplus.lsp.hook.HookEntry
+   xposed_init 里 io.github.jumaoli.aikey.hook.HookEntry
    钩 PhoneWindowManager 的 interceptKeyBeforeQueueing / interceptKeyBeforeDispatching，
    以及 MiuiPhoneWindowManager；AI 键框架键码 690（内核 689）。
 4. 原生动作
@@ -101,7 +101,7 @@ D:\小米云盘\文档\deepseek-harness\default-workspace\aikey-lsp
 
 1. **复制源码**：把 `src/com/aikeyplus/lsp/**` 整体挪到目标 App（包名替换为目标的），
    保留 `hook/` 子包与 `assets/*.sh`、`test/*`。
-2. **改包名与 authority**：`com.aikeyplus.lsp` → 目标包名；
+2. **改包名与 authority**：`io.github.jumaoli.aikey` → 目标包名；
    provider authority 改成 `<目标包名>.config`；同时改 `Bridge.URI`。
 3. **合并 Manifest**：按「一、关键集成点」补齐组件与权限；
    若目标 App 已有 Application 类，把 `App.onCreate` 里的 `Engine.ensureInstalled()` /

@@ -1,4 +1,4 @@
-package com.aikeyplus.lsp.hook;
+package io.github.jumaoli.aikey.hook;
 
 import android.appwidget.AppWidgetHost;
 import android.appwidget.AppWidgetHostView;
@@ -25,13 +25,13 @@ import de.robv.android.xposed.XposedBridge;
  * 我们在它进程里用 WindowManager 加一个 overlay 窗口，内容就"属于它"，能上屏。
  *
  * 协议：
- *   com.aikeyplus.lsp.SHOW_WIDGET   extra: provider(String, ComponentName 的扁平形式)
- *   com.aikeyplus.lsp.HIDE_WIDGET
+ *   io.github.jumaoli.aikey.SHOW_WIDGET   extra: provider(String, ComponentName 的扁平形式)
+ *   io.github.jumaoli.aikey.HIDE_WIDGET
  */
 public final class SubScreenHook {
 
-    public static final String ACTION_SHOW = "com.aikeyplus.lsp.SHOW_WIDGET";
-    public static final String ACTION_HIDE = "com.aikeyplus.lsp.HIDE_WIDGET";
+    public static final String ACTION_SHOW = "io.github.jumaoli.aikey.SHOW_WIDGET";
+    public static final String ACTION_HIDE = "io.github.jumaoli.aikey.HIDE_WIDGET";
 
     private static AppWidgetHost host;
     private static AppWidgetHostView widgetView;
