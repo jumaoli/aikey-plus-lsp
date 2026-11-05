@@ -56,13 +56,14 @@ public class HookEntry implements IXposedHookLoadPackage {
                 return;
             }
             if ("com.miui.securitycore".equals(lpparam.packageName)) {
-                SettingsPageHook.install(lpparam.classLoader);
+                AiKeySettingsInject.install(lpparam.classLoader);
                 return;
             }
             if (!"android".equals(lpparam.packageName)) {
                 return;
             }
             XposedBridge.log("AIKey: loading in " + lpparam.processName);
+            MiuiRuleGuard.install(lpparam.classLoader);
             KeyHook.install(lpparam.classLoader);
         } catch (Throwable t) {
             XposedBridge.log(t);

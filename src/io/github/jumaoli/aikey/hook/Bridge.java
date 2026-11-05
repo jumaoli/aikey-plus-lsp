@@ -46,6 +46,15 @@ final class Bridge {
             long tripleMs = parseLong(android.provider.Settings.System.getString(cr, "aikey_triple_ms"), 400);
             boolean haptic = !"0".equals(android.provider.Settings.System.getString(cr, "aikey_haptic"));
             String codes = android.provider.Settings.System.getString(cr, "aikey_codes");
+            // 系统「设置 → AI 键」页面里如果选了本模块的动作，以它为准
+            String sysClick = MiuiRuleGuard.readSelection(c, "click_mi_ai_key");
+            if (sysClick != null) {
+                single = sysClick;
+            }
+            String sysLong = MiuiRuleGuard.readSelection(c, "long_press_mi_ai_key");
+            if (sysLong != null) {
+                lng = sysLong;
+            }
             XposedBridge.log("AIKey: 从 Settings 读配置 single=" + single + " triple=" + triple);
             return new HookConfig(true, true, false, haptic,
                     single == null ? "none" : single,
