@@ -29,8 +29,8 @@ $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
 $Stage = Join-Path $env:TEMP 'aikey-lsp-build'
 if ($KeystorePath) { $Keystore = $KeystorePath } else { $Keystore = Join-Path $env:USERPROFILE '.aikey-lsp\aikey-debug.jks' }
-$Version = '8.3.0'
-$VersionCode = 73
+$Version = '8.3.4'
+$VersionCode = 77
 $ApkName = "aikey-plus-lsp-v$Version.apk"
 
 function Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
@@ -259,7 +259,7 @@ Step '校验 APK 内容'
 $badging = Run $Aapt2 @('dump', 'badging', $apk) 'aapt2 dump'
 $badging | Select-Object -First 6 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
-$need = @('classes.dex', 'assets/xposed_init', 'assets/dispatch.sh')
+$need = @('classes.dex', 'assets/xposed_init', 'assets/aikey_lib.sh', 'assets/dispatch.sh')
 $zip = [System.IO.Compression.ZipFile]::OpenRead($apk)
 try {
     $names = $zip.Entries | ForEach-Object { $_.FullName }

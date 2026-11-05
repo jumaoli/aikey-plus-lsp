@@ -84,7 +84,7 @@ public final class Engine {
         try {
             AssetManager am = app.getAssets();
             // 放在 assets 根目录：aapt2 在 Windows 上会给嵌套 assets 写出反斜杠路径
-            String[] names = {"dispatch.sh"};
+            String[] names = {"aikey_lib.sh", "dispatch.sh"};
             for (String n : names) {
                 copyAsset(am, n, new File(d, n));
             }
@@ -165,6 +165,9 @@ public final class Engine {
                     .append(Prefs.boolVal(app, Prefs.K_HAPTIC, true) ? 1 : 0).append("; ");
             cmd.append("settings put system aikey_codes ").append(q(Prefs.keyCodes(app))).append("; ");
             cmd.append("settings put system aikey_mode ").append(q(Prefs.mode(app))).append("; ");
+            long now = System.currentTimeMillis();
+            Prefs.sp(app).edit().putLong(Prefs.K_CFG_TS, now).apply();
+            cmd.append("settings put system aikey_ts ").append(now).append("; ");
             cmd.append("settings put system aikey_takeover_page ")
                     .append(Prefs.boolVal(app, Prefs.K_TAKEOVER, true) ? 1 : 0).append("; true");
             Shell.run(cmd.toString(), 12000);
@@ -498,12 +501,6 @@ public final class Engine {
         bg.execute(new Runnable() {
             @Override
             public void run() {
-                String mode = Prefs.mode(app);
-                boolean hookLike = Prefs.MODE_HOOK.equals(mode);
-                if (!hookLike) {
-                    Logs.append(app, "收到手势 " + gesture + "，但当前不是钩子模式，忽略");
-                    return;
-                }
                 String act = Prefs.action(app, gesture);
                 android.util.Log.i("AIKeyApp", "gesture " + gesture + " -> " + act);
                 Logs.append(app, "钩子手势 " + gesture + " -> " + act);

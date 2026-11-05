@@ -35,6 +35,7 @@ public final class Prefs {
     public static final String K_DISPLAY = "back_display";
     public static final String K_HAPTIC = "haptic";
     public static final String K_TAKEOVER = "takeover_page";
+    public static final String K_CFG_TS = "cfg_ts";
     public static final String K_WIDGET = "widget_id";
     public static final String K_WIDGET_PROVIDER = "widget_provider";
     public static final String K_EVENT = "event_device";
@@ -91,54 +92,66 @@ public final class Prefs {
     /** App 数据被系统清掉时，从 Settings.System 把配置认回来。只补缺失项。 */
     public static void hydrateFromSystem(Context c) {
         try {
+            long sysTs = parseLong(sysStr(c, "aikey_ts"), 0);
+            long localTs = sp(c).getLong(K_CFG_TS, 0);
+            boolean sysNewer = sysTs > 0 && sysTs > localTs;
+
             String[] gestures = {G_SINGLE, G_DOUBLE, G_TRIPLE, G_LONG};
             String[] keys = {K_SINGLE, K_DOUBLE, K_TRIPLE, K_LONG};
             android.content.SharedPreferences.Editor e = sp(c).edit();
             boolean dirty = false;
-            for (int i = 0; i < gestures.length; i++) {
-                if (sp(c).getString(keys[i], null) == null) {
-                    String v = sysStr(c, "aikey_" + gestures[i]);
-                    if (v != null && !v.isEmpty() && !"null".equals(v)) {
-                        e.putString(keys[i], v);
-                        dirty = true;
-                    }
+            for (int i2 = 0; i2 < gestures.length; i2++) {
+                String local = sp(c).getString(keys[i2], null);
+                boolean missing = local == null;
+                if (!missing && !sysNewer) {
+                    continue;
                 }
-            }
-            if (sp(c).getInt(K_LONG_MS, -1) < 0) {
-                String v = sysStr(c, "aikey_long_ms");
-                if (v != null) {
-                    e.putInt(K_LONG_MS, (int) parseLong(v, 900));
+                String v = sysStr(c, "aikey_" + gestures[i2]);
+                if (v != null && !v.isEmpty() && !"null".equals(v) && !v.equals(local)) {
+                    e.putString(keys[i2], v);
                     dirty = true;
                 }
             }
-            if (sp(c).getInt(K_DOUBLE_MS, -1) < 0) {
-                String v = sysStr(c, "aikey_double_ms");
-                if (v != null) {
-                    e.putInt(K_DOUBLE_MS, (int) parseLong(v, 300));
-                    dirty = true;
-                }
-            }
-            if (sp(c).getInt(K_TRIPLE_MS, -1) < 0) {
-                String v = sysStr(c, "aikey_triple_ms");
-                if (v != null) {
-                    e.putInt(K_TRIPLE_MS, (int) parseLong(v, 400));
-                    dirty = true;
-                }
-            }
-            if (!sp(c).contains(K_HAPTIC)) {
+            dirty |= hydrateInt(c, e, "aikey_long_ms", K_LONG_MS, 900, sysNewer);
+            dirty |= hydrateInt(c, e, "aikey_double_ms", K_DOUBLE_MS, 300, sysNewer);
+            dirty |= hydrateInt(c, e, "aikey_triple_ms", K_TRIPLE_MS, 400, sysNewer);
+            if (sysNewer || !sp(c).contains(K_HAPTIC)) {
                 String v = sysStr(c, "aikey_haptic");
                 if (v != null) {
                     e.putBoolean(K_HAPTIC, !"0".equals(v));
                     dirty = true;
                 }
             }
+            if (sysNewer && sysTs > 0) {
+                e.putLong(K_CFG_TS, sysTs);
+                dirty = true;
+            }
             if (dirty) {
                 e.apply();
-                Logs.append(c, "已从 Settings 认回配置");
+                Logs.append(c, "已从 Settings 认回配置（sysNewer=" + sysNewer + "）");
             }
         } catch (Throwable t) {
             Logs.append(c, "认回配置失败: " + t);
         }
+    }
+
+    /** 本地缺这个值、或者 Settings 更新时，采纳 Settings 的整数值。 */
+    private static boolean hydrateInt(Context c, android.content.SharedPreferences.Editor e,
+                                      String sysKey, String localKey, int def, boolean sysNewer) {
+        boolean missing = sp(c).getInt(localKey, -1) < 0;
+        if (!missing && !sysNewer) {
+            return false;
+        }
+        String v = sysStr(c, sysKey);
+        if (v == null) {
+            return false;
+        }
+        long parsed = parseLong(v, def);
+        if (sp(c).getInt(localKey, -1) == parsed && !sysNewer) {
+            return false;
+        }
+        e.putInt(localKey, (int) parsed);
+        return true;
     }
 
     private static long parseLong(String v, long def) {
@@ -171,7 +184,7 @@ public final class Prefs {
     }
 
     public static String mode(Context c) {
-        return sp(c).getString(K_MODE, MODE_DAEMON);
+        return MODE_HOOK;
     }
 
     public static void setMode(Context c, String mode) {
