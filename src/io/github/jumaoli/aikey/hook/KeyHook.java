@@ -406,6 +406,14 @@ public final class KeyHook {
                         return;
                     }
                     XposedBridge.log("AIKey: 原生 " + fn + " 失败，回退给 App");
+                } else if (action != null && !"none".equals(action)) {
+                    // 直接在 system_server 里发 Intent，和系统自己调动作一样快
+                    if (DirectRunner.execute(ctx, action, 1)) {
+                        XposedBridge.log("AIKey: 手势 " + gesture + " -> 直接执行 " + action + " ok");
+                        Bridge.log(ctx, "手势 " + gesture + " -> 直接执行 " + action + " ok");
+                        return;
+                    }
+                    XposedBridge.log("AIKey: 直接执行失败，回退给 App: " + action);
                 }
                 final String g2 = gesture;
                 final String a2 = action;
