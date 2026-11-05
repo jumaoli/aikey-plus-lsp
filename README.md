@@ -1,5 +1,7 @@
 # 爽歪了AI键 · LSPosed 版
 
+![Build APK](https://github.com/jumaoli/aikey-plus-lsp/actions/workflows/build.yml/badge.svg)
+
 把 KernelSU 模块 **aikey_plus v1.1.1** 的按键逻辑做成 LSPosed 模块，并在真机（小米 18 Pro，OS4.0.27）上把动作库扩成一套「AI 键快捷动作中心」。
 
 装 APK → LSPosed 启用（作用域「系统框架」）→ 重启 → 打开 App 授权 root → 选动作。

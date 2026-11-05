@@ -1,5 +1,7 @@
 # AIKey Plus — Xiaomi AI button, remastered
 
+![Build APK](https://github.com/jumaoli/aikey-plus-lsp/actions/workflows/build.yml/badge.svg)
+
 [中文说明](README.md)
 
 Turns the dedicated **AI button** on Xiaomi / Redmi phones (the one that opens 超级小爱 by default) into a fully customizable gesture key.
