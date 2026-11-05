@@ -16,14 +16,19 @@
 [CmdletBinding()]
 param(
     [string]$Sdk,
+    [string]$KeystorePath,
+    [string]$StorePass = 'android',
+    [string]$KeyPass,
     [switch]$SkipTests,
     [switch]$Clean
 )
 
+if (-not $KeyPass) { $KeyPass = $StorePass }
+
 $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
 $Stage = Join-Path $env:TEMP 'aikey-lsp-build'
-$Keystore = Join-Path $env:USERPROFILE '.aikey-lsp\aikey-debug.jks'
+if ($KeystorePath) { $Keystore = $KeystorePath } else { $Keystore = Join-Path $env:USERPROFILE '.aikey-lsp\aikey-debug.jks' }
 $Version = '8.1.0'
 $VersionCode = 71
 $ApkName = "aikey-plus-lsp-v$Version.apk"
@@ -235,17 +240,17 @@ Run $ZipAlign @('-f', '4', $unsigned, $aligned) 'zipalign'
 if (-not (Test-Path $Keystore)) {
     New-Item -ItemType Directory -Force -Path (Split-Path $Keystore) | Out-Null
     Run 'keytool' @('-genkeypair', '-keystore', $Keystore, '-alias', 'aikey',
-        '-storepass', 'android', '-keypass', 'android', '-keyalg', 'RSA',
+        '-storepass', $StorePass, '-keypass', $KeyPass, '-keyalg', 'RSA',
         '-keysize', '2048', '-validity', '10000', '-noprompt',
         '-dname', 'CN=AIKeyPlus LSP, O=AIKeyPlus, C=CN') '生成签名密钥'
-    Ok "首次生成签名：$Keystore（口令 android）"
+    Ok "首次生成签名：$Keystore"
 } else {
     Ok "复用已有签名：$Keystore"
 }
 
 $apk = Join-Path $BuildDir $ApkName
-Run $ApkSigner @('sign', '--ks', $Keystore, '--ks-pass', 'pass:android',
-    '--key-pass', 'pass:android', '--out', $apk, $aligned) 'apksigner sign'
+Run $ApkSigner @('sign', '--ks', $Keystore, '--ks-pass', "pass:$StorePass",
+    '--key-pass', "pass:$KeyPass", '--out', $apk, $aligned) 'apksigner sign'
 Run $ApkSigner @('verify', '--print-certs', $apk) 'apksigner verify' |
     ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
