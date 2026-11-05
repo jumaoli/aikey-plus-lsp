@@ -76,7 +76,7 @@ jobs:
           $notes = "由 GitHub Actions 自动构建（$tag）。`n`n> 如果本次没有配置 KEYSTORE_BASE64，此包使用 CI 临时签名，无法覆盖安装正式版。"
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $apk.FullName --clobber
+            Write-Host "Release $tag 已存在，跳过上传（避免覆盖正式签名包）"
           } else {
             gh release create $tag $apk.FullName --title "$tag" --notes $notes
           }
