@@ -24,8 +24,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: 准备 Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: 确认构建工具
         shell: pwsh
