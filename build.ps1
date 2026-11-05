@@ -29,8 +29,8 @@ $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
 $Stage = Join-Path $env:TEMP 'aikey-lsp-build'
 if ($KeystorePath) { $Keystore = $KeystorePath } else { $Keystore = Join-Path $env:USERPROFILE '.aikey-lsp\aikey-debug.jks' }
-$Version = '8.6.0'
-$VersionCode = 85
+$Version = '8.6.6'
+$VersionCode = 91
 $ApkName = "aikey-plus-lsp-v$Version.apk"
 
 function Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
