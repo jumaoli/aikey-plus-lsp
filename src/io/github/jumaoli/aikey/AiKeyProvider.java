@@ -68,7 +68,8 @@ public class AiKeyProvider extends ContentProvider {
             return out;
         }
         if ("gesture".equals(method)) {
-            Engine.get(c).dispatchGesture(arg);
+            String action = extras == null ? null : extras.getString("action");
+            Engine.get(c).dispatchGesture(arg, action);
             out.putBoolean("ok", true);
             return out;
         }

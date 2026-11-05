@@ -47,10 +47,62 @@ public final class AiKeySettingsInject {
                     }
                 }
             });
+            XposedBridge.hookAllMethods(fragment, "onPause", new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) {
+                    try {
+                        notifySelection(param.thisObject);
+                    } catch (Throwable t) {
+                        XposedBridge.log("AIKey: 广播选择失败: " + t);
+                    }
+                }
+            });
             XposedBridge.log("AIKey: 系统 AI 键设置页注入器已安装");
         } catch (Throwable t) {
             XposedBridge.log("AIKey: 找不到系统 AI 键设置页 fragment: " + t);
         }
+    }
+
+    /** 页面离开时把两个下拉框的当前值广播给 App（不依赖 MIUI 是否保存）。 */
+    private static void notifySelection(Object fragment) throws Exception {
+        if (fragment == null) {
+            return;
+        }
+        String click = null;
+        String longPress = null;
+        for (String name : new String[]{"c", "d"}) {
+            try {
+                Object preference = fragment.getClass().getField(name).get(fragment);
+                if (preference == null) {
+                    continue;
+                }
+                Method getValue = preference.getClass().getMethod("getValue");
+                Object v = getValue.invoke(preference);
+                if (!(v instanceof String)) {
+                    continue;
+                }
+                if ("c".equals(name)) {
+                    click = (String) v;
+                } else {
+                    longPress = (String) v;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        if (click == null && longPress == null) {
+            return;
+        }
+        android.content.Context ctx = (android.content.Context) fragment.getClass()
+                .getMethod("getActivity").invoke(fragment);
+        if (ctx == null) {
+            return;
+        }
+        android.content.Intent i = new android.content.Intent("io.github.jumaoli.aikey.SYNC_SELECTION");
+        i.setPackage("io.github.jumaoli.aikey");
+        i.putExtra("click", click);
+        i.putExtra("long", longPress);
+        ctx.sendBroadcast(i);
+        XposedBridge.log("AIKey: 已广播系统页面选择 click=" + click + " long=" + longPress);
     }
 
     private static void inject(Object fragment) throws Exception {

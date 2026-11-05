@@ -35,7 +35,8 @@ public final class MiuiRuleGuard {
             Class<?> c = Class.forName(STATUS, false, cl);
             XposedBridge.hookAllMethods(c, "needFallbackToNone", new XC_MethodHook() {
                 @Override
-                protected void afterHookedMethod(MethodHookParam param) {
+                protected void beforeHookedMethod(MethodHookParam param) {
+                    // 必须在原方法执行前拦下：原方法内部会把不支持的值写回 none
                     if (isManaged(param.args)) {
                         param.setResult(false);
                     }
@@ -67,7 +68,7 @@ public final class MiuiRuleGuard {
             Method m = handle.getDeclaredMethod(method);
             XposedBridge.hookMethod(m, new XC_MethodHook() {
                 @Override
-                protected void afterHookedMethod(MethodHookParam param) {
+                protected void beforeHookedMethod(MethodHookParam param) {
                     try {
                         Object raw = field.get(param.thisObject);
                         if (raw instanceof String && isManaged((String) raw)) {

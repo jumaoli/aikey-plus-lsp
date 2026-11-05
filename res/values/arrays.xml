@@ -3,5 +3,6 @@
     <!-- LSPosed 里默认勾选的作用域：系统框架 -->
     <string-array name="xposed_scope">
         <item>android</item>
+        <item>com.miui.securitycore</item>
     </string-array>
 </resources>

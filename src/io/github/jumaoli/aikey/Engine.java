@@ -305,6 +305,99 @@ public final class Engine {
         Logs.append(app, "记录系统原值: click=" + click + " long=" + lng);
     }
 
+    /** 把「接管前的系统原值」也写进 Settings，钩子用它判断用户是否改过。 */
+    private void writeOriginsToSettings() {
+        try {
+            String click = Prefs.strVal(app, Prefs.K_NATIVE_CLICK, "");
+            String lng = Prefs.strVal(app, Prefs.K_NATIVE_LONG, "");
+            Shell.run("settings put system aikey_orig_click " + q(click == null ? "" : click)
+                    + "; settings put system aikey_orig_long " + q(lng == null ? "" : lng), 8000);
+        } catch (Throwable t) {
+            Logs.append(app, "写原值失败: " + t);
+        }
+    }
+
+    /** 系统页面选完 → 直接写进本模块配置（不等 MIUI 保存那个值）。 */
+    public void applySystemSelection(String click, String longPress) {
+        try {
+            boolean changed = false;
+            String a = mapSystemValue(click);
+            if (a != null && !a.equals(Prefs.action(app, Prefs.G_SINGLE))) {
+                Prefs.setAction(app, Prefs.G_SINGLE, a);
+                changed = true;
+            }
+            String b = mapSystemValue(longPress);
+            if (b != null && !b.equals(Prefs.action(app, Prefs.G_LONG))) {
+                Prefs.setAction(app, Prefs.G_LONG, b);
+                changed = true;
+            }
+            if (changed) {
+                writeConfig();
+                Logs.append(app, "已采纳系统页面选择: click=" + click + " long=" + longPress);
+            }
+        } catch (Throwable t) {
+            Logs.append(app, "采纳系统选择失败: " + t);
+        }
+    }
+
+    /** aikey:xxx → xxx；MIUI 原生 function → native:xxx；none/空 → null。 */
+    private String mapSystemValue(String v) {
+        if (v == null) {
+            return null;
+        }
+        v = v.trim();
+        if (v.isEmpty() || "none".equals(v)) {
+            return null;
+        }
+        if (v.startsWith("aikey:")) {
+            String id = v.substring(6);
+            return id.isEmpty() ? null : id;
+        }
+        return "native:" + v;
+    }
+
+    /** 系统「设置 → AI 键」里改了值 → 同步成本模块的动作。 */
+    public void syncFromSystemSelectionSync() {
+        try {
+            String click = readSetting("click_mi_ai_key");
+            String lng = readSetting("long_press_mi_ai_key");
+            String origClick = Prefs.strVal(app, Prefs.K_NATIVE_CLICK, "");
+            String origLong = Prefs.strVal(app, Prefs.K_NATIVE_LONG, "");
+            boolean changed = false;
+            String a = toAction(click, origClick);
+            if (a != null && !a.equals(Prefs.action(app, Prefs.G_SINGLE))) {
+                Prefs.setAction(app, Prefs.G_SINGLE, a);
+                changed = true;
+            }
+            String b = toAction(lng, origLong);
+            if (b != null && !b.equals(Prefs.action(app, Prefs.G_LONG))) {
+                Prefs.setAction(app, Prefs.G_LONG, b);
+                changed = true;
+            }
+            if (changed) {
+                writeConfig();
+                Logs.append(app, "已同步系统 AI 键选择: click=" + click + " long=" + lng);
+            }
+        } catch (Throwable t) {
+            Logs.append(app, "同步系统选择失败: " + t);
+        }
+    }
+
+    /** 系统值 → 本模块动作 id；没改过（等于原值）或 none 时返回 null。 */
+    private String toAction(String systemValue, String original) {
+        if (systemValue == null || systemValue.isEmpty() || "none".equals(systemValue)) {
+            return null;
+        }
+        if (original != null && original.equals(systemValue)) {
+            return null;
+        }
+        if (systemValue.startsWith("aikey:")) {
+            String id = systemValue.substring(6);
+            return id.isEmpty() ? null : id;
+        }
+        return "native:" + systemValue;
+    }
+
     private String readSetting(String key) {
         Shell.Result r = Shell.run("settings get system " + key, 8000);
         String v = r.ok ? r.out.trim() : "";
@@ -323,9 +416,10 @@ public final class Engine {
         // 允许绑定小部件（root 才能用 appwidget 命令）
         Shell.run("appwidget grantbind --package " + app.getPackageName() + " --user 0", 8000);
         Shell.run("pm grant " + app.getPackageName() + " android.permission.CAMERA", 8000);
-        Shell.run("settings put system click_mi_ai_key none; "
-                + "settings put system long_press_mi_ai_key none", 10000);
-        Logs.append(app, "已关闭系统自带 AI 键动作（原值已记录）");
+        // 不再把系统设置清成 none：那样的结果就是「系统里选了也不生效」。
+        // 用户/system 页面选的值由 Bridge 直接读取并优先使用。
+        writeOriginsToSettings();
+        Logs.append(app, "已记录系统原值，系统 AI 键设置保持用户选择");
     }
 
     /** 还原成模块接管之前的值；没有记录时退回小米默认值。 */
@@ -495,13 +589,18 @@ public final class Engine {
 
     /** LSPosed 钩子派发过来的手势（provider 线程调用，立刻返回）。 */
     public void dispatchGesture(final String gesture) {
+        dispatchGesture(gesture, null);
+    }
+
+    public void dispatchGesture(final String gesture, final String actionFromHook) {
         if (gesture == null) {
             return;
         }
         bg.execute(new Runnable() {
             @Override
             public void run() {
-                String act = Prefs.action(app, gesture);
+                String act = (actionFromHook != null && !actionFromHook.isEmpty())
+                        ? actionFromHook : Prefs.action(app, gesture);
                 android.util.Log.i("AIKeyApp", "gesture " + gesture + " -> " + act);
                 Logs.append(app, "钩子手势 " + gesture + " -> " + act);
                 runActionSync(act);

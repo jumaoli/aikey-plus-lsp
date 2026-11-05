@@ -46,12 +46,18 @@ final class Bridge {
             long tripleMs = parseLong(android.provider.Settings.System.getString(cr, "aikey_triple_ms"), 400);
             boolean haptic = !"0".equals(android.provider.Settings.System.getString(cr, "aikey_haptic"));
             String codes = android.provider.Settings.System.getString(cr, "aikey_codes");
-            // 系统「设置 → AI 键」页面里如果选了本模块的动作，以它为准
-            String sysClick = MiuiRuleGuard.readSelection(c, "click_mi_ai_key");
+            // 系统「设置 → AI 键」页面里选的值优先（等于原值或 none 时忽略）
+            String origClick = android.provider.Settings.System
+                    .getString(cr, "aikey_orig_click");
+            String origLong = android.provider.Settings.System
+                    .getString(cr, "aikey_orig_long");
+            String sysClick = systemAction(
+                    android.provider.Settings.System.getString(cr, "click_mi_ai_key"), origClick);
             if (sysClick != null) {
                 single = sysClick;
             }
-            String sysLong = MiuiRuleGuard.readSelection(c, "long_press_mi_ai_key");
+            String sysLong = systemAction(
+                    android.provider.Settings.System.getString(cr, "long_press_mi_ai_key"), origLong);
             if (sysLong != null) {
                 lng = sysLong;
             }
@@ -62,6 +68,25 @@ final class Bridge {
                     triple == null ? "none" : triple,
                     lng == null ? "none" : lng,
                     longMs, doubleMs, tripleMs, parseCodes(codes));
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** 系统设置值 → 动作 id：aikey:xxx 直接取，原生 function 加 native: 前缀。 */
+    private static String systemAction(String value, String original) {
+        try {
+            if (value == null || value.isEmpty() || "none".equals(value)) {
+                return null;
+            }
+            if (original != null && original.equals(value)) {
+                return null;
+            }
+            if (value.startsWith("aikey:")) {
+                String id = value.substring(6);
+                return id.isEmpty() ? null : id;
+            }
+            return "native:" + value;
         } catch (Throwable t) {
             return null;
         }
@@ -112,11 +137,20 @@ final class Bridge {
     }
 
     static void dispatch(Context c, String gesture) {
+        dispatch(c, gesture, null);
+    }
+
+    /** action 是钩子已经解析好的动作（可能来自系统页面选择），App 直接执行它。 */
+    static void dispatch(Context c, String gesture, String action) {
         if (c == null) {
             return;
         }
         try {
-            c.getContentResolver().call(URI, "gesture", gesture, null);
+            Bundle extra = new Bundle();
+            if (action != null) {
+                extra.putString("action", action);
+            }
+            c.getContentResolver().call(URI, "gesture", gesture, extra);
         } catch (Throwable t) {
             logError("派发手势失败: " + t);
         }

@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
         w.setStatusBarColor(ACCENT);
         w.getDecorView().setSystemUiVisibility(0);
         Prefs.hydrateFromSystem(this);
+        Engine.get(this).syncFromSystemSelectionSync();
         buildUi();
         refreshStatus();
 
